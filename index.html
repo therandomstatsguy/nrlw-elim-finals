@@ -962,6 +962,7 @@ function buildTeamStreaks(home,away,venue,odds,neutral,favNick,iso){
     const teamIsFav=(isHome===favIsHome);
     const coverThr=teamIsFav?absLine:-absLine;
     const hcap=(teamIsFav?'-':'+')+absLine.toFixed(1);
+    const oppHcap=(teamIsFav?'+':'-')+absLine.toFixed(1);
     const totDef=M&&M.totalDef!=null?M.totalDef:38.5;
     const tptsDef=(M&&(isHome?M.tptsDefH:M.tptsDefA))||18.5, triesDef=(M&&(isHome?M.triesDefH:M.triesDefA))||4;
     const triesLine=(Math.ceil(triesDef)-0.5).toFixed(1);
@@ -973,8 +974,8 @@ function buildTeamStreaks(home,away,venue,odds,neutral,favNick,iso){
     const types=[
       {sen:'To Win',cond:r=>r.pf>r.pa,odd:oTeamH2H,df:(s,c)=>T+' has won '+run(s)+' '+c,sf:r=>({t:r.pf>r.pa?'Won':(r.pf<r.pa?'Lost':'Draw'),ok:r.pf>r.pa})},
       {sen:'To Lose',cond:r=>r.pf<r.pa,odd:oOppH2H,df:(s,c)=>T+' has lost '+run(s)+' '+c,sf:r=>({t:r.pf<r.pa?'Lost':(r.pf>r.pa?'Won':'Draw'),ok:r.pf<r.pa})},
-      {sen:'Cover '+hcap,cond:r=>(r.pf-r.pa)>coverThr,odd:oLineFor,df:(s,c)=>T+' has covered a '+hcap+' line in '+run(s)+' '+c,sf:r=>({t:(r.pf-r.pa)>coverThr?'Covered':'Failed',ok:(r.pf-r.pa)>coverThr})},
-      {sen:'Fail '+hcap,cond:r=>(r.pf-r.pa)<coverThr,odd:oLineOpp,df:(s,c)=>T+' has failed a '+hcap+' line in '+run(s)+' '+c,sf:r=>({t:(r.pf-r.pa)<coverThr?'Failed':'Covered',ok:(r.pf-r.pa)<coverThr})},
+      {sen:T+' '+hcap,cond:r=>(r.pf-r.pa)>coverThr,odd:oLineFor,df:(s,c)=>T+' has covered a '+hcap+' line in '+run(s)+' '+c,sf:r=>({t:(r.pf-r.pa)>coverThr?'Covered':'Failed',ok:(r.pf-r.pa)>coverThr})},
+      {sen:oppD+' '+oppHcap,cond:r=>(r.pf-r.pa)<coverThr,odd:oLineOpp,df:(s,c)=>oppD+' has covered a '+oppHcap+' line in '+(s.perfect?T+'’s last '+s.x+' straight '+c:s.x+' of '+T+'’s last '+s.y+' '+c),sf:r=>({t:(r.pf-r.pa)<coverThr?'Failed':'Covered',ok:(r.pf-r.pa)<coverThr})},
       {sen:'Total Over '+totDef.toFixed(1),game:true,cond:r=>(r.pf+r.pa)>totDef,odd:oTot&&oTot.over,df:(s,c)=>runc(s)+' '+T+' '+c+' have gone over '+totDef.toFixed(1)+' total points',sf:r=>({t:(r.pf+r.pa)+' pts',ok:(r.pf+r.pa)>totDef})},
       {sen:'Total Under '+totDef.toFixed(1),game:true,cond:r=>(r.pf+r.pa)<totDef,odd:oTot&&oTot.under,df:(s,c)=>runc(s)+' '+T+' '+c+' have gone under '+totDef.toFixed(1)+' total points',sf:r=>({t:(r.pf+r.pa)+' pts',ok:(r.pf+r.pa)<totDef})},
       {sen:'Over '+tptsDef.toFixed(1)+' Team Pts',cond:r=>r.pf>tptsDef,odd:oTptsT&&oTptsT.over,df:(s,c)=>T+' has scored over '+tptsDef.toFixed(1)+' points in '+run(s)+' '+c,sf:r=>({t:r.pf+' pts',ok:r.pf>tptsDef})},
