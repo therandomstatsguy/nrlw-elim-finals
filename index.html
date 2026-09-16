@@ -182,8 +182,8 @@ function rn(s,r){const m=D.finalsRounds&&D.finalsRounds[s];return (m&&m[r])?m[r]
 function isFinalG(g){var m=D.finalsRounds&&D.finalsRounds[g.s];return !!(m&&m[g.r]);}
 function isFinalTG(r){var m=D.finalsRounds&&D.finalsRounds[r.s];return !!(m&&m[r.rd]);}
 const MARKETS=[{k:'ats',l:'ATS'},{k:'first',l:'1st'},{k:'f123',l:'1/2/3'},{k:'last',l:'Last'},{k:'h1',l:'1H'},{k:'h2',l:'2H'}];
-const CATS=[{k:'all',l:'All'},{k:'h2h',l:'H2H'},{k:'venue',l:'Venue'},{k:'posopp',l:'Pos v Opp'}];
-const PERIODS=[{k:'all',l:'All'},{k:'2026',l:'2026'},{k:'2025',l:'2025'},{k:'finals',l:'Finals'},{k:'l20',l:'Last 20'},{k:'l10',l:'Last 10'},{k:'l5',l:'Last 5'}];
+const CATS=[{k:'all',l:'All'},{k:'h2h',l:'H2H'},{k:'venue',l:'Venue'},{k:'finals',l:'Finals'},{k:'posopp',l:'Pos v Opp'}];
+const PERIODS=[{k:'all',l:'All'},{k:'2026',l:'2026'},{k:'2025',l:'2025'},{k:'l20',l:'Last 20'},{k:'l10',l:'Last 10'},{k:'l5',l:'Last 5'}];
 const MD={ats:'Anytime try scorer',first:'First try of the match',f123:'One of the first three tries',last:'Last try of the match',h1:'Scores a try in the 1st half',h2:'Scores a try in the 2nd half'};
 const POSLBL={FB:'Fullback',WING:'Wing',CTR:'Centre',HALF:'Half',HOOK:'Hooker',PROP:'Prop','2RW':'2nd Row',LOCK:'Lock',BENCH:'Bench'};
 const OPP_POS={'Fullback':'Fullback','Left Wing':'Right Wing','Right Wing':'Left Wing','Left Centre':'Right Centre','Right Centre':'Left Centre','Left Half':'Right 2nd Row','Right Half':'Left 2nd Row','Left 2nd Row':'Right Half','Right 2nd Row':'Left Half','Prop':'Prop','Hooker':'Hooker','Lock':'Lock'};
@@ -233,6 +233,7 @@ function gameSet(name,pdet,cat,opp,venue){
   let g=D.G.filter(x=>x.n===name);
   if(cat==='h2h') g=g.filter(x=>x.o===opp);
   else if(cat==='venue') g=g.filter(x=>x.v===venue);
+  else if(cat==='finals') g=g.filter(x=>isFinalG(x));
   return g;
 }
 function applyPeriod(g,period){
@@ -390,8 +391,6 @@ function PlayerModal({pl,nick,oppForPlayer,venue,round,odds,favNick,market0,atsN
   const triesTot=baseSet.reduce((a,b)=>a+b.t,0);
   const atkRank=posRankMap(pl.pg,market,period,'atk')[nick];
   const defRank=posRankMap(pl.pg,market,period,'def')[opp];
-  const finSet=own.filter(isFinalG);
-  const finSR=strikeRate(finSet,market,atsN);
   // factors
   const facs=[
     {k:'all',label:'All Games',set:own},
@@ -431,9 +430,7 @@ function PlayerModal({pl,nick,oppForPlayer,venue,round,odds,favNick,market0,atsN
             ce(ScoreCard,{val:avgMin,label:'Avg Mins'}),
             ce(ScoreCard,{val:triesTot,label:'Tries'}),
             ce(ScoreCard,{val:ord(atkRank),label:myAb+' '+posShort+' ATK',color:rankColor(atkRank)}),
-            ce(ScoreCard,{val:ord(defRank),label:opAb+' '+posShort+' DEF',color:rankColor(defRank)})),
-          ce('div',{className:'pm-sc',style:{marginTop:'6px'}},
-            ce(ScoreCard,{val:finSet.length?finSR.rate+'%':'–',label:'Finals'+(finSet.length?' ('+finSR.h+'/'+finSR.n+')':''),color:finSet.length?srColor(finSR.rate):'var(--t3)'})))),
+            ce(ScoreCard,{val:ord(defRank),label:opAb+' '+posShort+' DEF',color:rankColor(defRank)})))),
       ce('div',{style:{padding:'12px 16px 16px'}},
         ce('div',{className:'cr pm-filt',style:{marginBottom:'8px'}},
           ce('span',{className:'cl'},'Market'),
@@ -941,7 +938,7 @@ function InsightCard({it,odds,onClick}){
     ce('div',{style:{flex:1,minWidth:0,padding:'9px 11px',display:'flex',flexDirection:'column',gap:'2px',background:col+'22'}},
       ce('div',{style:{display:'flex',alignItems:'center',gap:'5px'}},
         it.perfect?ce('span',{style:{fontSize:'12px',flexShrink:0}},'🔥'):null,
-        ce('span',{style:{fontSize:'14px',fontWeight:900,color:'#fff',flexShrink:0}},it.x),
+        it.perfect?ce('span',{style:{fontSize:'14px',fontWeight:900,color:'#fff',flexShrink:0}},it.x):null,
         ce('span',{style:{fontSize:'13px',fontWeight:800,color:'var(--t1)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}},shortName(it.pl.name))),
       ce('div',{style:{fontSize:'11.5px',fontWeight:800,color:'var(--acc)',textTransform:'uppercase',letterSpacing:'.5px'}},it.market),
       ce('div',{style:{fontSize:'11px',color:'var(--t2)',lineHeight:1.35}},it.desc),
@@ -1015,7 +1012,7 @@ function TeamInsightCard({it,onClick}){
     ce('div',{style:{flex:1,minWidth:0,padding:'9px 11px',display:'flex',flexDirection:'column',gap:'2px',background:col+'22'}},
       ce('div',{style:{display:'flex',alignItems:'center',gap:'5px'}},
         it.perfect?ce('span',{style:{fontSize:'12px',flexShrink:0}},'🔥'):null,
-        ce('span',{style:{fontSize:'14px',fontWeight:900,color:'#fff',flexShrink:0}},it.x),
+        it.perfect?ce('span',{style:{fontSize:'14px',fontWeight:900,color:'#fff',flexShrink:0}},it.x):null,
         ce('span',{style:{fontSize:'13px',fontWeight:800,color:'var(--t1)'}},tnDisp(it.nick))),
       ce('div',{style:{fontSize:'11.5px',fontWeight:800,color:'var(--acc)',textTransform:'uppercase',letterSpacing:'.5px'}},it.market),
       ce('div',{style:{fontSize:'11px',color:'var(--t2)',lineHeight:1.35}},it.desc),
