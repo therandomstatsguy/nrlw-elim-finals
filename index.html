@@ -972,8 +972,8 @@ function buildTeamStreaks(home,away,venue,odds,neutral,favNick,iso){
     const oLineFor=teamIsFav?pFav:pUnd, oLineOpp=teamIsFav?pUnd:pFav;
     const oTot=M&&M.total[String(totDef)], oTptsT=M&&(isHome?M.tptsH:M.tptsA)[String(tptsDef)], oTriesT=M&&(isHome?M.triesH:M.triesA)[String(Math.ceil(triesDef))];
     const types=[
-      {sen:'To Win',cond:r=>r.pf>r.pa,odd:oTeamH2H,df:(s,c)=>T+' has won '+run(s)+' '+c,sf:r=>({t:r.pf>r.pa?'Won':(r.pf<r.pa?'Lost':'Draw'),ok:r.pf>r.pa})},
-      {sen:'To Lose',cond:r=>r.pf<r.pa,odd:oOppH2H,df:(s,c)=>T+' has lost '+run(s)+' '+c,sf:r=>({t:r.pf<r.pa?'Lost':(r.pf>r.pa?'Won':'Draw'),ok:r.pf<r.pa})},
+      {sen:T+' Win',cond:r=>r.pf>r.pa,odd:oTeamH2H,df:(s,c)=>T+' has won '+run(s)+' '+c,sf:r=>({t:r.pf>r.pa?'Won':(r.pf<r.pa?'Lost':'Draw'),ok:r.pf>r.pa})},
+      {sen:oppD+' Win',cond:r=>r.pf<r.pa,odd:oOppH2H,df:(s,c)=>T+' has lost '+run(s)+' '+c,sf:r=>({t:r.pf<r.pa?'Lost':(r.pf>r.pa?'Won':'Draw'),ok:r.pf<r.pa})},
       {sen:T+' '+hcap,cond:r=>(r.pf-r.pa)>coverThr,odd:oLineFor,df:(s,c)=>T+' has covered a '+hcap+' line in '+run(s)+' '+c,sf:r=>({t:(r.pf-r.pa)>coverThr?'Covered':'Failed',ok:(r.pf-r.pa)>coverThr})},
       {sen:oppD+' '+oppHcap,cond:r=>(r.pf-r.pa)<coverThr,odd:oLineOpp,df:(s,c)=>oppD+' has covered a '+oppHcap+' line in '+(s.perfect?T+'’s last '+s.x+' straight '+c:s.x+' of '+T+'’s last '+s.y+' '+c),sf:r=>({t:(r.pf-r.pa)<coverThr?'Failed':'Covered',ok:(r.pf-r.pa)<coverThr})},
       {sen:'Total Over '+totDef.toFixed(1),game:true,cond:r=>(r.pf+r.pa)>totDef,odd:oTot&&oTot.over,df:(s,c)=>runc(s)+' '+T+' '+c+' have gone over '+totDef.toFixed(1)+' total points',sf:r=>({t:(r.pf+r.pa)+' pts',ok:(r.pf+r.pa)>totDef})},
@@ -997,7 +997,7 @@ function buildTeamStreaks(home,away,venue,odds,neutral,favNick,iso){
     ctxs.forEach(function(ctx){
       var gDesc=ctx.games.slice().sort(function(a,b){return a.d<b.d?1:(a.d>b.d?-1:0);});
       types.forEach(function(ty){
-        if(ty.game&&!isHome)return;      // total points: home team only
+        if(ty.game&&!isHome&&ctx.k==='vsopp')return;   // total points: dedupe head-to-head to home team only (each team keeps its own splits)
         if(!ty.odd)return;               // only markets with odds attached
         var s=bestXY(ctx.games,ty.cond,4); if(!s)return;
         list.push({type:'team',nick:nick,x:s.x,y:s.y,perfect:s.perfect,s:s.x,market:ty.sen,sen:ty.sen,desc:ty.df(s,ctx.ctxt),factor:ctx.label,fl:ctx.label,ck:ctx.k,odd:ty.odd,games:gDesc,sf:ty.sf});
