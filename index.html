@@ -1175,5 +1175,104 @@ function App(){
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
 
 </script>
+<!-- ===================================================================
+     RSG deep-link reader
+     Paste this immediately before </body> in every RSG dashboard.
+
+     It lets any outside link open the dashboard on a specific game, and
+     optionally open a player's profile modal:
+
+         yourdash/#game=1
+         yourdash/#game=1&player=Daniel%20Tupou
+
+     It drives the existing UI the same way a person would (it clicks the
+     game button), so it works on every generation of the dashboard and
+     needs no change to React state, props or internals.
+     =================================================================== -->
+<script>
+(function () {
+  'use strict';
+
+  function params() {
+    var out = {};
+    String(location.hash || '').replace(/^#/, '').split('&').forEach(function (pair) {
+      if (!pair) return;
+      var i = pair.indexOf('=');
+      var k = i < 0 ? pair : pair.slice(0, i);
+      var v = i < 0 ? '' : pair.slice(i + 1);
+      try { out[k] = decodeURIComponent(v.replace(/\+/g, ' ')); } catch (e) { out[k] = v; }
+    });
+    return out;
+  }
+
+  /* wait for the app to paint before touching anything */
+  function whenReady(sel, cb, tries) {
+    tries = tries == null ? 80 : tries;
+    var els = document.querySelectorAll(sel);
+    if (els.length) return cb(els);
+    if (tries <= 0) return;
+    setTimeout(function () { whenReady(sel, cb, tries - 1); }, 100);
+  }
+
+  function isOn(el) { return /(^|\s)on(\s|$)/.test((el && el.className) || ''); }
+
+  /* Click, then check it stuck. Some builds finish mounting after the first
+     paint and throw the first click away, so retry a few times. */
+  function selectGame(idx, done, attempt) {
+    attempt = attempt || 0;
+    whenReady('.gbtn', function () {
+      var btns = document.querySelectorAll('.gbtn');
+      var b = btns[idx];
+      if (!b) return done && done();
+      if (isOn(b)) return done && done();
+      if (attempt >= 6) return done && done();
+      b.click();
+      setTimeout(function () {
+        var now = document.querySelectorAll('.gbtn')[idx];
+        if (now && isOn(now)) return done && done();
+        selectGame(idx, done, attempt + 1);
+      }, 250 + attempt * 200);
+    });
+  }
+
+  function openPlayer(name) {
+    var want = String(name || '').trim().toLowerCase();
+    if (!want) return;
+    var surname = want.split(/\s+/).pop();
+    var nodes = document.querySelectorAll('div,span,td,th,button,a,li,p');
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      if (n.children.length > 2) continue;              /* leaf-ish nodes only */
+      var t = (n.textContent || '').trim().toLowerCase();
+      if (!t || t.length > 44) continue;
+      var exact = (t === want);
+      var initialled = surname && t.indexOf(surname) > -1 && t.length <= want.length + 8;
+      if (!exact && !initialled) continue;
+      var hit = n.closest('[onclick]') || n.closest('button,a,[role="button"]') || n;
+      hit.click();
+      return true;
+    }
+    return false;
+  }
+
+  function run() {
+    var q = params();
+    var hasGame = q.game != null && q.game !== '' && !isNaN(parseInt(q.game, 10));
+    if (!hasGame && !q.player) return;
+    selectGame(hasGame ? parseInt(q.game, 10) : -1, function () {
+      if (q.player) setTimeout(function () { openPlayer(q.player); }, 250);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
+  /* let a link change the view without a full reload */
+  window.addEventListener('hashchange', run);
+})();
+</script>
+
 </body>
 </html>
